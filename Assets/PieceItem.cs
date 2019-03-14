@@ -18,15 +18,15 @@ public class PieceItem : MonoBehaviour
         {
             return;
         }
-        switch (GameManager.Instance.GamePieceType)
+        switch (GameManager.Instance.gamePieceType)
         {
             case PieceType.White:
                 MyType = PieceType.White;
-                GameManager.Instance.GamePieceType = PieceType.Black;
+                GameManager.Instance.gamePieceType = PieceType.Black;
                 break;
             case PieceType.Black:
                 MyType = PieceType.Black;
-                GameManager.Instance.GamePieceType = PieceType.White;
+                GameManager.Instance.gamePieceType = PieceType.White;
                 break;
 
         }
