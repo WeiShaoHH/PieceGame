@@ -8,7 +8,7 @@ public class GameManager : MonoBehaviour
 
     public PlayerType curPlayerType = PlayerType.Me;//玩家类型
 
-    public PieceType gamePieceType = PieceType.None;//当前能下的棋子类型
+    public PieceType gamePieceType = PieceType.Black;//当前能下的棋子类型
 
     public Transform piecePrefab;//棋子预置
 
@@ -20,7 +20,15 @@ public class GameManager : MonoBehaviour
 
     public int totalColCount;//需要生成的总列数
 
-    private PieceItem[,] pieceItemArray = new PieceItem[19, 19];//棋盘上的所有子
+    public static PieceItem[,] pieceItemArray = new PieceItem[19, 19];//棋盘上的所有子
+
+    private List<PieceItem> whiteItems = new List<PieceItem>();//临时白棋总数
+
+    private List<PieceItem> blackItems = new List<PieceItem>();//临时黑棋总数
+
+    private List<PieceItem> tempItems = new List<PieceItem>();//当前方向上的所有棋子
+
+    public Point PlayerSetPoint;//玩家当前下的点
 
     private void Awake()
     {
@@ -29,11 +37,33 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        StartGame();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            StartGame();
+        }
+    }
+
+    private void StartGame()
+    {
+        GameData.GameOver = false;
+        GameData.Winner = PieceType.Black;
+        gamePieceType = PieceType.Black;
+        curPlayerType = PlayerType.Me;
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Destroy(transform.GetChild(i).gameObject);
+        }
         for (int i = 0; i < totalColCount; i++)
         {
             for (int j = 0; j < totalVolCount; j++)
             {
                 Transform piece = Instantiate(piecePrefab, transform);
+
                 piece.name = "行：" + j + "--列：" + i;
                 piece.localPosition = new Vector2(i * volVelocity, j * colVelocity);
                 PieceItem pieceItem = piece.gameObject.GetComponent<PieceItem>();
@@ -42,15 +72,17 @@ public class GameManager : MonoBehaviour
                 pieceItemArray[j, i] = pieceItem;
             }
         }
-
     }
-
     /// <summary>
     /// 每当下完一步棋之后开始检测是否赢了
     /// </summary>
     /// <param name="pieceItem">当前下的棋</param>
     public void CalcSuccess(PieceItem pieceItem)
     {
+        if (pieceItem.MyType == PieceType.Black)
+        {
+            PlayerSetPoint = new Point(pieceItem.vol, pieceItem.col);
+        }
         for (int i = 0; i < 4; i++)
         {
             CheckSuccess(pieceItem, (CheckType)i);
@@ -66,8 +98,9 @@ public class GameManager : MonoBehaviour
     /// <param name="checkType">检测类型</param>
     private void CheckSuccess(PieceItem pieceItem, CheckType checkType)
     {
-        int blackSuccessCount = 1;  //当前计算成功的黑棋数量
-        int whiteSuccessCount = 1;  //当前计算成功的白棋数量
+        tempItems.Clear();
+        whiteItems.Clear();
+        blackItems.Clear();
         PieceItem calcTemp = null;  //根据当前下的子来得到一个和当前子形成一次函数的子，也可以叫目标子
         int tempVol = 0, tempCol = 0; //目标子的行列数
         switch (checkType)
@@ -116,9 +149,12 @@ public class GameManager : MonoBehaviour
                         //如果右上角溢出就找到自己左下方的那个作为目标子
                         tempVol = pieceItem.vol - 1;    //目标子的行数 = 当前子的行数 - 1
                         tempCol = pieceItem.col - 1;    //目标子的列数 = 当前子的列数 - 1
+                        if (tempCol < 0 || tempVol < 0)//左上角  右下角 
+                        {
+                            return;
+                        }
                     }
                     #endregion
-
                 }
                 break;
             case CheckType.DecMid:
@@ -136,9 +172,14 @@ public class GameManager : MonoBehaviour
                         //左上方找目标子
                         tempVol = pieceItem.vol - 1;
                         tempCol = pieceItem.col + 1;
+                        bool overflowCol = tempCol > (totalColCount - 1);
+                        bool overflowVol = tempVol < 0;
+                        if (overflowCol || overflowVol)//右上角   左下角
+                        {
+                            return;
+                        }
                     }
                     #endregion
-
                 }
                 break;
             default:
@@ -151,101 +192,101 @@ public class GameManager : MonoBehaviour
         int y1 = pieceItem.col;
         int x2 = calcTemp.vol;
         int y2 = calcTemp.col;
-        List<PieceItem> tempItems = new List<PieceItem>();
         for (int i = 0; i < totalColCount; i++)
         {
             for (int j = 0; j < totalVolCount; j++)
             {
-                if (pieceItemArray[j, i].beLoaded)
+                bool h = (((y1 - y2) * j) - ((x1 - x2) * i) + (x1 * y2) - (x2 * y1)) == 0 ? true : false;   //点是否满足求出来的一次函数的方程
+                if (h)
                 {
-                    bool h = (((y1 - y2) * j) - ((x1 - x2) * i) + (x1 * y2) - (x2 * y1)) == 0 ? true : false;   //点是否满足求出来的一次函数的方程
-                    if (h)
+                    PieceItem item = pieceItemArray[j, i];
+                    if (pieceItemArray[j, i].beLoaded)
                     {
-                        if (tempItems.Count > 0)
+                        if (item.MyType == PieceType.White)
                         {
-                            if (tempItems[tempItems.Count - 1].MyType == pieceItemArray[j, i].MyType)   //判断临时队列里边最后一个和当前将要加的类型是否一致
-                            {
-                                tempItems.Add(pieceItemArray[j, i]);
-                            }
+                            whiteItems.Add(item);
                         }
                         else
                         {
-                            tempItems.Add(pieceItemArray[j, i]);
+                            blackItems.Add(item);
                         }
                     }
+                    tempItems.Add(item);
                 }
             }
         }
-        if (tempItems.Count >= 5)   //满足上边函数的棋子已经满足了5个
-        {
-            for (int i = 0; i < tempItems.Count - 1; i++)
-            {
-                if (tempItems[i].beLoaded && tempItems[i + 1].beLoaded)
-                {
-                    if (tempItems[i].MyType == tempItems[i + 1].MyType)     //判断前后两个棋子类型是否一致
-                    {
-                        int checkCol = 0, checkVol = 0;     //根据当前检测类型来判断行和列的增量大小
-                        switch (checkType)
-                        {
-                            case CheckType.Col:
-                                checkCol = 1;   //检测列：列是逐渐变化 1 的，行不变
-                                checkVol = 0;
-                                break;
-                            case CheckType.Row:
-                                checkCol = 0;
-                                checkVol = 1;   //检测行：行是逐渐变化 1 的，列不变
-                                break;
-                            case CheckType.AddMid:
-                            case CheckType.DecMid:
-                                checkCol = checkVol = 1;   //检测斜向：行和列都会变化1
-                                break;
-                            default:
-                                break;
-                        }
-                        int col = Mathf.Abs(tempItems[i].col - tempItems[i + 1].col);   //当前棋子和下一个棋子【列】的差值  计算这两个值的目的是为了比较是否时相邻的
-                        int vol = Mathf.Abs(tempItems[i].vol - tempItems[i + 1].vol);   //当前棋子和下一个棋子【行】的差值  避免出现 黑黑黑黑   黑 也会算进去的情况
-                        if (col == checkCol && vol == checkVol)
-                        {
-                            switch (tempItems[i].MyType)
-                            {
-                                case PieceType.None:
-                                    break;
-                                case PieceType.White:
-                                    whiteSuccessCount++;
-                                    break;
-                                case PieceType.Black:
-                                    blackSuccessCount++;
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }
-                    }
-                }
-            }
-            if (blackSuccessCount >= 5 || whiteSuccessCount >= 5)
-            {
-                switch (checkType)
-                {
-                    case CheckType.Col:
-                        Debug.LogFormat("【列={0}棋胜】", pieceItem.MyType == PieceType.Black ? "黑" : "白");
-                        break;
-                    case CheckType.Row:
-                        Debug.LogFormat("【行={0}棋胜】", pieceItem.MyType == PieceType.Black ? "黑" : "白");
-                        break;
-                    case CheckType.AddMid:
-                        Debug.LogFormat("【斜上={0}棋胜】", pieceItem.MyType == PieceType.Black ? "黑" : "白");
-                        break;
-                    case CheckType.DecMid:
-                        Debug.LogFormat("【斜下={0}棋胜】", pieceItem.MyType == PieceType.Black ? "黑" : "白");
-                        break;
-                    default:
-                        break;
-                }
-                whiteSuccessCount = 1;
-                blackSuccessCount = 1;
-            }
-        }
+        Check(checkType, PieceType.Black, blackItems);
+        Check(checkType, PieceType.White, whiteItems);
     }
 
+    /// <summary>
+    /// 将满足函数的黑白子加入到各自的计算列表中进行计算
+    /// </summary>
+    /// <param name="checkType"></param>
+    /// <param name="pieceType"></param>
+    /// <param name="tempItems"></param>
+    private void Check(CheckType checkType, PieceType pieceType, List<PieceItem> tempItems)
+    {
+        if (tempItems.Count < 5)
+        {
+            return;
+        }
+        int tempcount = 1;//当前计算成功的棋子数量
+        for (int i = 0; i < tempItems.Count - 1; i++)
+        {
+            if (tempItems[i].beLoaded && tempItems[i + 1].beLoaded)
+            {
+                if (tempItems[i].MyType == tempItems[i + 1].MyType)     //判断前后两个棋子类型是否一致
+                {
+                    int checkCol = 0, checkVol = 0;     //根据当前检测类型来判断行和列的增量大小
+                    switch (checkType)
+                    {
+                        case CheckType.Col:
+                            checkCol = 1;   //检测列：列是逐渐变化 1 的，行不变
+                            checkVol = 0;
+                            break;
+                        case CheckType.Row:
+                            checkCol = 0;
+                            checkVol = 1;   //检测行：行是逐渐变化 1 的，列不变
+                            break;
+                        case CheckType.AddMid:
+                        case CheckType.DecMid:
+                            checkCol = checkVol = 1;   //检测斜向：行和列都会变化1
+                            break;
+                        default:
+                            break;
+                    }
+                    int col = Mathf.Abs(tempItems[i].col - tempItems[i + 1].col);   //当前棋子和下一个棋子【列】的差值  计算这两个值的目的是为了比较是否时相邻的
+                    int vol = Mathf.Abs(tempItems[i].vol - tempItems[i + 1].vol);   //当前棋子和下一个棋子【行】的差值  避免出现 黑黑黑黑   黑 也会算进去的情况
+                    if (col == checkCol && vol == checkVol)
+                    {
+                        tempcount++;
+                    }
+                }
+            }
+        }
+        if (tempcount >= 5)
+        {
+            //switch (checkType)
+            //{
+            //    case CheckType.Col:
+            //        Util.LogFormat("【列={0}棋胜】", pieceType == PieceType.Black ? "黑" : "白");
+            //        break;
+            //    case CheckType.Row:
+            //        Util.LogFormat("【行={0}棋胜】", pieceType == PieceType.Black ? "黑" : "白");
+            //        break;
+            //    case CheckType.AddMid:
+            //        Util.LogFormat("【斜上={0}棋胜】", pieceType == PieceType.Black ? "黑" : "白");
+            //        break;
+            //    case CheckType.DecMid:
+            //        Util.LogFormat("【斜下={0}棋胜】", pieceType == PieceType.Black ? "黑" : "白");
+            //        break;
+            //    default:
+            //        break;
+            //}
+            GameData.GameOver = true;
+            GameData.Winner = pieceType;
+            Util.LogErrorFormat("游戏结束！获胜玩家是：{0}", pieceType == PieceType.Black ? "黑手" : "白手");
+        }
+    }
 }

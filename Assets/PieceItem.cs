@@ -4,14 +4,13 @@ using UnityEngine.EventSystems;
 public class PieceItem : MonoBehaviour
 {
     public bool beLoaded = false;
-    public int vol;
-    public int col;
-    public PieceType MyType { get; private set; }
-    // Use this for initialization
-    void Start()
-    {
 
-    }
+    public int vol;
+
+    public int col;
+
+    public PieceType MyType { get; private set; }
+
     public void OnPointClick()
     {
         if (beLoaded)
@@ -33,10 +32,5 @@ public class PieceItem : MonoBehaviour
         Util.SetItemType(this);
         beLoaded = true;
         GameManager.Instance.CalcSuccess(this);
-    }
-    // Update is called once per frame
-    void Update()
-    {
-
     }
 }

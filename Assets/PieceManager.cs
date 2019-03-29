@@ -12,7 +12,7 @@ using System.Text;
  * 眠二：能够形成眠三的二，000112   001012  010012  10001
  * 
  * 
- * 
+ * 连五 > 活四 > 死四 > 活三 > 活二 （略大于）死三 > 死二 > 其他棋型 
  * 
  *  1、打分思路
     （1）先对整个棋盘形势进行打分，存在两个矩阵（二维数组）上
@@ -77,9 +77,36 @@ using System.Text;
  * 
  * 
  * **/
-namespace Assets
+
+public struct Point
 {
-    class PieceManager
+    public int Vol;
+    public int Col;
+    public Point(int vol, int col)
     {
+        Vol = vol;
+        Col = col;
+    }
+}
+
+public class PieceManager
+{
+    public Point CalcAI()
+    {
+        int vol = -1, col = -1;
+        int maxAttackScore = 0;
+        int maxDefendScore = 0;
+        PieceItem[,] pieceItems = GameManager.pieceItemArray;
+        for (int i = 0; i < GameManager.Instance.totalVolCount; i++)
+        {
+            for (int j = 0; j < GameManager.Instance.totalColCount; j++)
+            {
+
+            }
+        }
+
+
+
+        return new Point(vol, col);
     }
 }

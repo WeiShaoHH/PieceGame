@@ -360,6 +360,11 @@ Prefab:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 114459228215931020, guid: 06fc4d7ec48c55f4ea2b297c6750a1e9,
+        type: 2}
+      propertyPath: m_Color.a
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 06fc4d7ec48c55f4ea2b297c6750a1e9, type: 2}
   m_IsPrefabAsset: 0
@@ -414,7 +419,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   curPlayerType: 0
-  GamePieceType: 2
+  gamePieceType: 2
   piecePrefab: {fileID: 224061762115121338, guid: 06fc4d7ec48c55f4ea2b297c6750a1e9,
     type: 2}
   volVelocity: 23.85

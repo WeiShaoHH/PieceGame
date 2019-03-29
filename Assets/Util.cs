@@ -9,8 +9,6 @@ public static class Util
         Image itemImg = pieceItem.GetComponent<Image>();
         switch (pieceItem.MyType)
         {
-            case PieceType.None:
-                break;
             case PieceType.White:
                 itemImg.color = Color.white;
                 break;
@@ -20,5 +18,25 @@ public static class Util
             default:
                 break;
         }
+    }
+
+    public static void Log(string s)
+    {
+        Debug.LogFormat("<color=green>【{0}】</color>", s);
+    }
+
+    public static void LogFormat(string format, params object[] args)
+    {
+        Debug.LogFormat("<color=yellow>" + format + "</color>", args);
+    }
+
+    public static void LogError(string s)
+    {
+        Debug.LogFormat("<color=red>【{0}】</color>", s);
+    }
+
+    public static void LogErrorFormat(string format, params object[] args)
+    {
+        Debug.LogFormat("<color=red>" + format + "</color>", args);
     }
 }
